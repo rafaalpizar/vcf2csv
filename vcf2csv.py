@@ -9,9 +9,10 @@ RE_VCF_BEGIN = r'^BEGIN:VCARD$'
 RE_VCF_END = r'^END:VCARD$'
 RE_VCF_NAME = r'^N:(.+);(.+);(.*);(.*);$'
 RE_VCF_FULL_NAME = r'^FN:(.*)$'
+RE_VCF_TEL_CELL = r'^TEL;CELL:(.*)$'
 RE_VCF_EMAIL= r'.*EMAIL.*type=INTERNET.*:(.*)$'
 
-FIELD_NAMES = ['first_name', 'last_name', 'full_name', 'email', 'email2']
+FIELD_NAMES = ['first_name', 'last_name', 'full_name', 'tel_cel', 'email', 'email2']
 
 def parse_vcf(vcf_file, ignore_no_email):
     data = []
@@ -35,6 +36,7 @@ def parse_vcf(vcf_file, ignore_no_email):
         name = re.match(RE_VCF_NAME, line)
         full_name = re.match(RE_VCF_FULL_NAME, line)
         email = re.match(RE_VCF_EMAIL, line)
+        tel_cel = re.match(RE_VCF_TEL_CELL, line)
 
         if name:
             line_data['first_name'] = name.group(2).strip()
@@ -46,9 +48,11 @@ def parse_vcf(vcf_file, ignore_no_email):
                 line_data['email'] = email.group(1).strip()
             else:
                 line_data['email2'] = email.group(1).strip()
+        if tel_cel:
+            line_data['tel_cel'] = tel_cel.group(1).strip()
+            line_data['tel_cel'] = line_data['tel_cel'].replace('-', '')
 
     return data
-
 
 def write_csv(data, csv_file):
     writer = csv.DictWriter(csv_file, fieldnames=FIELD_NAMES)
