@@ -21,7 +21,7 @@ def parse_vcf(vcf_file):
             # if there is a begin line, start a new empty line_data dict
             line_data = {}
         elif re.match(RE_VCF_END, line):
-            # if there is a end line and there are information in the data dict
+            # if there is a end line and there are information in the data dict add it to the array
             if line_data != {}:
                 data = data + [line_data]
         # Extract vcf field
