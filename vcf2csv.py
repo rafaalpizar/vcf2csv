@@ -21,7 +21,7 @@ def phone_number_clenaup(phone_number):
         return phone_number
 
 def decode_quoted_hex(hex_data):
-    clean_hex_data = hex_data.replace(';', '20').split('=')
+    clean_hex_data = hex_data.replace(';', '=20').split('=')
     text_decoded = ''
     for item in clean_hex_data:
         try:
