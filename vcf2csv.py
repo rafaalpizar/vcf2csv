@@ -1,80 +1,54 @@
+#!/usr/bin/env python3
+
 import argparse
 import csv
 import re
 import sys
-import time
+import pandas as pd
 
 # VCF regex matches
 RE_VCF_BEGIN = r'^BEGIN:VCARD$'
 RE_VCF_END = r'^END:VCARD$'
-RE_VCF_NAME = r'^N:(.+);(.+);(.*);(.*);$'
-RE_VCF_FULL_NAME = r'^FN:(.*)$'
-RE_VCF_TEL_CELL = r'^TEL;CELL:(.*)$'
-RE_VCF_EMAIL= r'.*EMAIL.*type=INTERNET.*:(.*)$'
+RE_VCF_FIELD = r'^(.*):(.*)'
 
-FIELD_NAMES = ['first_name', 'last_name', 'full_name', 'tel_cel', 'email', 'email2']
-
-def parse_vcf(vcf_file, ignore_no_email):
+def parse_vcf(vcf_file):
     data = []
     line_data = {}
     for line in vcf_file:
         line = line.strip()
         # Handle lines that are beginnings and ends of cards
         if re.match(RE_VCF_BEGIN, line):
+            # if there is a begin line, start a new empty line_data dict
             line_data = {}
-        if re.match(RE_VCF_END, line):
+        elif re.match(RE_VCF_END, line):
+            # if there is a end line and there are information in the data dict
             if line_data != {}:
-                for field in FIELD_NAMES:
-                    if field not in line_data:
-                        line_data[field] = ""
-
-                if ignore_no_email and line_data['email'] == "":
-                    continue
                 data = data + [line_data]
-                continue
-
-        name = re.match(RE_VCF_NAME, line)
-        full_name = re.match(RE_VCF_FULL_NAME, line)
-        email = re.match(RE_VCF_EMAIL, line)
-        tel_cel = re.match(RE_VCF_TEL_CELL, line)
-
-        if name:
-            line_data['first_name'] = name.group(2).strip()
-            line_data['last_name'] = name.group(1).strip()
-        if full_name:
-            line_data['full_name'] = full_name.group(1).strip()
-        if email:
-            if "email" not in line_data:
-                line_data['email'] = email.group(1).strip()
-            else:
-                line_data['email2'] = email.group(1).strip()
-        if tel_cel:
-            line_data['tel_cel'] = tel_cel.group(1).strip()
-            line_data['tel_cel'] = line_data['tel_cel'].replace('-', '')
-
+        # Extract vcf field
+        else:
+            vcf_field = re.match(RE_VCF_FIELD, line)
+            if vcf_field:
+                field = vcf_field.group(1).strip()
+                value = vcf_field.group(2).strip()
+                # if the field is a photho, just set a flagavoid capture photo field because it is a multiline base64 string
+                if re.search("photo", field.lower()): value = "Yes"
+                line_data[field] = value
     return data
 
-def write_csv(data, csv_file):
-    writer = csv.DictWriter(csv_file, fieldnames=FIELD_NAMES)
-    writer.writeheader()
-    for line in data:
-        writer.writerow(line)
+def write_csv(data, csv_file_name):
+    df = pd.DataFrame.from_dict(data)
+    df.to_csv(csv_file_name, index=False, header=True)
 
-def main(input_file, output_file, ignore_no_email):
+def main(input_file, output_file):
     with open(input_file, 'r') as vcf_file:
-        data = parse_vcf(vcf_file, ignore_no_email)
-
-    with open(output_file, 'w') as csv_file:
-        write_csv(data, csv_file)
-
+        data = parse_vcf(vcf_file)
+    write_csv(data, output_file)
     return 0
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Convert VCF file to CSV.')
     parser.add_argument('input_file', type=str, help='vcf file to process')
     parser.add_argument('output_file', type=str, help='csv file to output')
-    parser.add_argument('--ignore_no_email', action='store_true',
-        help='ignore entries with no email')
     args = parser.parse_args()
 
-    sys.exit(main(args.input_file, args.output_file, args.ignore_no_email))
+    sys.exit(main(args.input_file, args.output_file))
