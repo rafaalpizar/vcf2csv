@@ -20,6 +20,21 @@ def phone_number_clenaup(phone_number):
     else:
         return phone_number
 
+def decode_quoted_hex(hex_data):
+    clean_hex_data = hex_data.replace(';', '20').split('=')
+    try:
+        text_decoded = ''
+        for item in clean_hex_data:
+            try:
+                text_decoded += bytes.fromhex(item).decode()
+            except:
+                text_decoded += '='
+    except Exception as e:
+        print(e)
+        print(hex_data)
+        exit(1)
+    return text_decoded
+
 def parse_vcf(vcf_file):
     data = []
     line_data = {}
@@ -42,6 +57,7 @@ def parse_vcf(vcf_file):
                 # if the field is a photho, just set a flagavoid capture photo field because it is a multiline base64 string
                 if re.search("photo", field.lower()): value = "Yes"
                 if re.search("tel", field.lower()): value =  phone_number_clenaup(value)
+                if re.search('encoding=quoted-printable', field.lower()): value = decode_quoted_hex(value)
                 line_data[field] = value
     return data
 
