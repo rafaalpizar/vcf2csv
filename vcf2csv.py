@@ -11,6 +11,15 @@ RE_VCF_BEGIN = r'^BEGIN:VCARD$'
 RE_VCF_END = r'^END:VCARD$'
 RE_VCF_FIELD = r'^(.*):(.*)'
 
+def phone_number_clenaup(phone_number):
+    bad_chars = re.compile(r'[- ]')
+    ok_country_code = re.compile(r'\+?506')
+    clean_phone_number = re.sub(bad_chars, '', phone_number)
+    if (len(clean_phone_number) == 8) or (re.match(ok_country_code, clean_phone_number)):
+        return clean_phone_number
+    else:
+        return phone_number
+
 def parse_vcf(vcf_file):
     data = []
     line_data = {}
@@ -32,6 +41,7 @@ def parse_vcf(vcf_file):
                 value = vcf_field.group(2).strip()
                 # if the field is a photho, just set a flagavoid capture photo field because it is a multiline base64 string
                 if re.search("photo", field.lower()): value = "Yes"
+                if re.search("tel", field.lower()): value =  phone_number_clenaup(value)
                 line_data[field] = value
     return data
 
