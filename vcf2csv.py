@@ -23,11 +23,19 @@ def phone_number_clenaup(phone_number):
 def decode_quoted_hex(hex_data):
     clean_hex_data = hex_data.replace(';', '=20').split('=')
     text_decoded = ''
+    char_decoded = ''
+    to_be_decoded = ''
     for item in clean_hex_data:
         try:
-            text_decoded += bytes.fromhex(item).decode()
+            if to_be_decoded:
+                char_decoded = bytes.fromhex(to_be_decoded).decode()
+                to_be_decoded = ''
+            else:
+                char_decoded = ''
+            char_decoded += bytes.fromhex(item).decode()
+            text_decoded += char_decoded
         except:
-            text_decoded += '='
+            to_be_decoded += item
     return text_decoded
 
 def parse_vcf(vcf_file):
