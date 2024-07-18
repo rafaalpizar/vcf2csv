@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import re
 import sys
 import pandas as pd
@@ -80,7 +81,7 @@ def parse_vcf(vcf_file):
 
 def write_csv(data, csv_file_name):
     df = pd.DataFrame.from_dict(data)
-    df.to_csv(csv_file_name, index=False, header=True)
+    df.to_csv(csv_file_name, index=False, header=True, quoting=csv.QUOTE_ALL)
 
 def main(input_file, output_file):
     with open(input_file, 'r') as vcf_file:
