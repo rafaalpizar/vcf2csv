@@ -32,11 +32,30 @@ def decode_quoted_hex(hex_data):
                 to_be_decoded = ''
             else:
                 char_decoded = ''
-            char_decoded += bytes.fromhex(item).decode()
-            text_decoded += char_decoded
+                char_decoded += bytes.fromhex(item).decode()
+                text_decoded += char_decoded
         except:
             to_be_decoded += item
     return text_decoded
+
+def add_vcf_field(line_data, vcf_field, vcf_value, index=0):
+    # add field to dictionary with recursive alg
+    if vcf_field in line_data:
+        index += 1
+        # get field base name to append later append new index
+        vcf_field = vcf_field.split('-')[0]
+        # recursive call to with new index append
+        add_vcf_field(line_data,f'{vcf_field}-{index}', vcf_value, index)
+    else:
+        line_data[vcf_field] = vcf_value
+
+def extract_vcf_field(line_data, vcf_field, vcf_value):
+    # clenaup field values
+    # if the field is a photho, just set a flagavoid capture photo field because it is a multiline base64 string
+    if re.search("photo", vcf_field.lower()): vcf_value = "Yes"
+    if re.search("tel", vcf_field.lower()): vcf_value =  phone_number_clenaup(vcf_value)
+    if re.search('encoding=quoted-printable', vcf_field.lower()): vcf_value = decode_quoted_hex(vcf_value)
+    add_vcf_field(line_data, vcf_field, vcf_value)
 
 def parse_vcf(vcf_file):
     data = []
@@ -57,11 +76,7 @@ def parse_vcf(vcf_file):
             if vcf_field:
                 field = vcf_field.group(1).strip()
                 value = vcf_field.group(2).strip()
-                # if the field is a photho, just set a flagavoid capture photo field because it is a multiline base64 string
-                if re.search("photo", field.lower()): value = "Yes"
-                if re.search("tel", field.lower()): value =  phone_number_clenaup(value)
-                if re.search('encoding=quoted-printable', field.lower()): value = decode_quoted_hex(value)
-                line_data[field] = value
+                extract_vcf_field(line_data, field, value)
     return data
 
 def write_csv(data, csv_file_name):
