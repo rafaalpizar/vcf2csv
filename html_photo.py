@@ -35,7 +35,7 @@ class HtmlPhoto():
  th,
  td {
    border: 1px solid rgb(160 160 160);
-   padding: 8px 10px;
+   padding: 3px 2px;
  }
 
  th[scope='col'] {
