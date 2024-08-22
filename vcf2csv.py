@@ -109,7 +109,7 @@ def write_html(data, html_file_name):
     for vcf_entry in data:
         photo_found = None
         for vcf_field in vcf_entry.keys():
-            if vcf_field.find("PHOTO") > -1:
+            if vcf_field.lower().find("photo") > -1:
                 photo_found = True
                 id_field = vcf_entry["id"]
                 name_1 = vcf_entry.get("N", "No name recorded")
@@ -125,10 +125,10 @@ def write_html(data, html_file_name):
                 photoenc = f"{photo_format};{photo_encoding}"
             else:
                 photoenc = None
-            # Create HTML
+            # Add row to HTML
             html_photo.add_table_row(id_field, name_1, name_2, photo_value, photoenc)
-        if html_photo.row_count > 0:
-            html_photo.write_html(html_file_name)
+    if html_photo.row_count > 0:
+        html_photo.write_html(html_file_name)
 
 def main(input_file, output_file):
     with open(input_file, 'r') as vcf_file:
