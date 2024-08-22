@@ -9,6 +9,7 @@ import pandas as pd
 # VCF regex matches
 RE_VCF_BEGIN = r'^BEGIN:VCARD$'
 RE_VCF_END = r'^END:VCARD$'
+RE_VCF_PHOTO = r'^PHOTO.*:.*'
 RE_VCF_FIELD = r'^(.*):(.*)'
 
 def phone_number_clenaup(phone_number):
@@ -39,7 +40,7 @@ def decode_quoted_hex(hex_data):
     return text_decoded
 
 def add_vcf_field(line_data, vcf_field, vcf_value, index=0):
-    # add field to dictionary with recursive alg
+    # add field to dictionary checking the index and determine the next one
     if vcf_field in line_data:
         index += 1
         # get field base name to append later append new index
@@ -48,35 +49,45 @@ def add_vcf_field(line_data, vcf_field, vcf_value, index=0):
         add_vcf_field(line_data,f'{vcf_field}-{index}', vcf_value, index)
     else:
         line_data[vcf_field] = vcf_value
+    return vcf_field
 
 def extract_vcf_field(line_data, vcf_field, vcf_value):
     # clenaup field values
     # if the field is a photho, just set a flagavoid capture photo field because it is a multiline base64 string
-    if re.search("photo", vcf_field.lower()): vcf_value = "Yes"
     if re.search("tel", vcf_field.lower()): vcf_value =  phone_number_clenaup(vcf_value)
     if re.search('encoding=quoted-printable', vcf_field.lower()): vcf_value = decode_quoted_hex(vcf_value)
-    add_vcf_field(line_data, vcf_field, vcf_value)
+    return add_vcf_field(line_data, vcf_field, vcf_value)
 
 def parse_vcf(vcf_file):
     data = []
     line_data = {}
+    photo_field = None
     for line in vcf_file:
         line = line.strip()
         # Handle lines that are beginnings and ends of cards
         if re.match(RE_VCF_BEGIN, line):
+            photo_field = None
             # if there is a begin line, start a new empty line_data dict
             line_data = {}
         elif re.match(RE_VCF_END, line):
+            photo_field = None
             # if there is a end line and there are information in the data dict add it to the array
             if line_data != {}:
                 data = data + [line_data]
-        # Extract vcf field
-        else:
+             # Extract vcf field
+        elif re.match(RE_VCF_FIELD, line):
             vcf_field = re.match(RE_VCF_FIELD, line)
             if vcf_field:
                 field = vcf_field.group(1).strip()
                 value = vcf_field.group(2).strip()
-                extract_vcf_field(line_data, field, value)
+                final_field = extract_vcf_field(line_data, field, value)
+                # if a photo is found save the name into a flag
+                if field.lower().find("photo") > -1:
+                    photo_field = final_field
+                else:
+                    photo_field = None
+        elif photo_field:
+            line_data[photo_field] = line_data[photo_field] + line
     return data
 
 def write_csv(data, csv_file_name):
@@ -89,7 +100,7 @@ def main(input_file, output_file):
     write_csv(data, output_file)
     return 0
 
-if __name__=="__main__":
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert VCF file to CSV.')
     parser.add_argument('input_file', type=str, help='vcf file to process')
     parser.add_argument('output_file', type=str, help='csv file to output')
