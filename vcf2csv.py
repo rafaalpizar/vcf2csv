@@ -6,6 +6,8 @@ import re
 import sys
 import pandas as pd
 
+from html_photo import HtmlPhoto
+
 # VCF regex matches
 RE_VCF_BEGIN = r'^BEGIN:VCARD$'
 RE_VCF_END = r'^END:VCARD$'
@@ -62,13 +64,16 @@ def parse_vcf(vcf_file):
     data = []
     line_data = {}
     photo_field = None
+    count = 0
     for line in vcf_file:
         line = line.strip()
         # Handle lines that are beginnings and ends of cards
         if re.match(RE_VCF_BEGIN, line):
+            count += 1
             photo_field = None
             # if there is a begin line, start a new empty line_data dict
             line_data = {}
+            line_data["id"] = count
         elif re.match(RE_VCF_END, line):
             photo_field = None
             # if there is a end line and there are information in the data dict add it to the array
@@ -92,14 +97,41 @@ def parse_vcf(vcf_file):
             line_data[photo_field] = line_data[photo_field] + line
     return data
 
+# save csv file with all fields
 def write_csv(data, csv_file_name):
     df = pd.DataFrame.from_dict(data)
     df.to_csv(csv_file_name, index=False, header=True, quoting=csv.QUOTE_ALL)
+
+
+# if there are photos, save those as html file
+def write_html(data, html_file_name):
+    html_photo = HtmlPhoto()
+    for vcf_entry in data:
+        photo_found = None
+        for vcf_field in vcf_entry.keys():
+            if vcf_field.find("PHOTO") > -1:
+                photo_found = True
+                id_field = vcf_entry["id"]
+                name_1 = vcf_entry.get("N", "No name recorded")
+                name_2 = vcf_entry.get("FN", "No name recorded")
+                photo_value = vcf_entry.get(vcf_field, "No photo")
+                photo_field = vcf_field
+                break
+        if photo_found:
+            photo_info = re.match("PHOTO;ENCODING=(.*);(.*)", photo_field)
+            photo_encoding = photo_info.group(1)
+            photo_format = photo_info.group(2)
+            photoenc = f"{photo_format};{photo_encoding}"
+            # Create HTML
+            html_photo.add_table_row(id_field, name_1, name_2, photo_value, photoenc)
+        if html_photo.row_count > 0:
+            html_photo.write_html(html_file_name)
 
 def main(input_file, output_file):
     with open(input_file, 'r') as vcf_file:
         data = parse_vcf(vcf_file)
     write_csv(data, output_file)
+    write_html(data, f"{output_file}.html")
     return 0
 
 if __name__ == "__main__":
