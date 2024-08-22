@@ -1,17 +1,16 @@
 VCF2CSV
 =======
 
-VCF2CSV is a simple Vcard to CSV converter.
+VCF2CSV is a full Vcard to CSV converter.
 
-Presently, it only understands the following fields:
-* Name (first and last)
-* Full Name
-* Email
+This tool extract all the fields from the vcf file and
+it creates an HTML file with photos if available.
+
 
 Usage:
 
 ```
-usage: vcf2csv.py [-h] [--ignore_no_email] input_file output_file
+usage: vcf2csv.py [-h] input_file output_file
 
 Convert VCF file to CSV.
 
