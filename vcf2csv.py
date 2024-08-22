@@ -121,7 +121,10 @@ def write_html(data, html_file_name):
             photo_info = re.match("PHOTO;ENCODING=(.*);(.*)", photo_field)
             photo_encoding = photo_info.group(1)
             photo_format = photo_info.group(2)
-            photoenc = f"{photo_format};{photo_encoding}"
+            if photo_encoding and photo_format:
+                photoenc = f"{photo_format};{photo_encoding}"
+            else:
+                photoenc = None
             # Create HTML
             html_photo.add_table_row(id_field, name_1, name_2, photo_value, photoenc)
         if html_photo.row_count > 0:
