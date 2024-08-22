@@ -73,8 +73,9 @@ def parse_vcf(vcf_file):
             photo_field = None
             # if there is a end line and there are information in the data dict add it to the array
             if line_data != {}:
+                # append csv line to list
                 data = data + [line_data]
-             # Extract vcf field
+        # Extract vcf field
         elif re.match(RE_VCF_FIELD, line):
             vcf_field = re.match(RE_VCF_FIELD, line)
             if vcf_field:
@@ -86,6 +87,7 @@ def parse_vcf(vcf_file):
                     photo_field = final_field
                 else:
                     photo_field = None
+        # if the photo field is required
         elif photo_field:
             line_data[photo_field] = line_data[photo_field] + line
     return data
