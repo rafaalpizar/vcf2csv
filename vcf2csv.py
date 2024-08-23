@@ -118,9 +118,24 @@ def write_html(data, html_file_name):
                 photo_field = vcf_field
                 break
         if photo_found:
-            photo_info = re.match("PHOTO;ENCODING=(.*);(.*)", photo_field)
-            photo_encoding = photo_info.group(1)
-            photo_format = photo_info.group(2)
+            # Extract photo encoding and type
+            photo_info = re.match("PHOTO;(.*)", photo_field).group(1).lower()
+            try:
+                # asume these formats:
+                # type=jpeg;encoding=base64
+                # encoding=base64;type=jpeg
+                photo_dict = dict(info.split("=") for info in photo_info.split(";"))
+                photo_encoding = photo_dict["encoding"]
+                photo_format = photo_dict["type"]
+            except ValueError:
+                # sometimes these string format is
+                # encoding=base64;jpeg
+                # split by ; get first item and split by = and get second item to get encoding
+                photo_encoding = photo_info.lower().split(";")[0].split("=")[1]
+                photo_format = photo_info.lower().split(";")[1]
+            else:
+                photo_encoding = None
+                photo_format = None
             if photo_encoding and photo_format:
                 photoenc = f"{photo_format};{photo_encoding}"
             else:
