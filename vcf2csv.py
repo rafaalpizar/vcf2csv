@@ -5,6 +5,7 @@ import csv
 import re
 import sys
 import pandas as pd
+from urllib.parse import unquote
 
 from html_photo import HtmlPhoto
 
@@ -12,7 +13,7 @@ from html_photo import HtmlPhoto
 RE_VCF_BEGIN = r'^BEGIN:VCARD$'
 RE_VCF_END = r'^END:VCARD$'
 RE_VCF_PHOTO = r'^PHOTO.*:.*'
-RE_VCF_FIELD = r'^(.*):(.*)'
+RE_VCF_FIELD = r'^(.*?):(.*)'
 
 def phone_number_clenaup(phone_number):
     bad_chars = re.compile(r'[- ]')
@@ -24,22 +25,11 @@ def phone_number_clenaup(phone_number):
         return phone_number
 
 def decode_quoted_hex(hex_data):
-    clean_hex_data = hex_data.replace(';', '=20').split('=')
-    text_decoded = ''
-    char_decoded = ''
-    to_be_decoded = ''
-    for item in clean_hex_data:
-        try:
-            if to_be_decoded:
-                char_decoded = bytes.fromhex(to_be_decoded).decode()
-                to_be_decoded = ''
-            else:
-                char_decoded = ''
-                char_decoded += bytes.fromhex(item).decode()
-                text_decoded += char_decoded
-        except:
-            to_be_decoded += item
-    return text_decoded
+    clean_hex_data = hex_data.replace(';', '=20')
+    # convert string to urlencode type
+    clean_hex_data = clean_hex_data.replace("=", "%")
+    # url decode and return
+    return unquote(clean_hex_data)
 
 def add_vcf_field(line_data, vcf_field, vcf_value, index=0):
     # add field to dictionary checking the index and determine the next one
